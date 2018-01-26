@@ -3,6 +3,7 @@ import { Component, ViewChild, ElementRef } from '@angular/core';
 declare var google;
 var radaresPerto = [];
 var marcadores;
+var radaresSelecionados = [];
 
 @Component({
   selector: 'page-home',
@@ -45,6 +46,7 @@ export class HomePage {
             , longitude: linha[0]
             , titulo: 'Radar'
             , velocidade: linha[3]
+            , direcao: linha[5]
             , imagem: imagens.medio
           }
 
@@ -114,11 +116,14 @@ export class HomePage {
         console.log("localização ", position.coords.latitude, position.coords.longitude);
         console.log("ate onde ", selecionado.latitude, selecionado.longitude);
 
+        var distanciaTotal = this.CalcRadiusDistance(selecionado.latitude,selecionado.longitude,position.coords.latitude,position.coords.longitude)
+
         marcadores.forEach(element => {
-          if (this.CalcRadiusDistance(element.latitude, element.longitude, position.coords.latitude, position.coords.longitude) <= 35 && element.velocidade > 0) {
+          if (this.CalcRadiusDistance(element.latitude, element.longitude, position.coords.latitude, position.coords.longitude) <= distanciaTotal && element.velocidade > 0) {
             //console.log(element.velocidade);
             //selecionado = element;
             radaresPerto.push(element);
+            //this.criaMarcador(element, this.map);
           }
         });
 
@@ -140,7 +145,7 @@ export class HomePage {
 
   CalcRadiusDistance(lat1, lon1, lat2, lon2) {
     var RADIUSMILES = 3961,
-      RADIUSKILOMETERS = 6373,
+      RADIUSKILOMETERS = 6373000,
       latR1 = this.deg2rad(lat1),
       lonR1 = this.deg2rad(lon1),
       latR2 = this.deg2rad(lat2),
@@ -170,7 +175,7 @@ export class HomePage {
     var posicao = new google.maps.LatLng(marcador.latitude, marcador.longitude);
     var opcoes = {
       position: posicao
-      , title: marcador.titulo + " Velocidade: " + marcador.velocidade
+      , title: marcador.titulo + " Velocidade: " + marcador.velocidade+" "+ marcador.direcao
       , animation: google.maps.Animation.DROP
       , icon: {
         url: marcador.imagem || 'http://i.imgur.com/bFnWq8k.png'
@@ -185,58 +190,99 @@ export class HomePage {
 
   verificarRadares(res) {
 
-    let radaresSelecionados = [];
-    //isto vai no final desta função
-    radaresPerto.forEach(element => {
-      //this.criaMarcador(element, this.map);  
-    });
+    console.log(radaresPerto.length)
+    var steps = res.routes[0].legs[0].steps;
+    console.log("todos",res.routes[0].legs[0]);
+    var total=1;
 
+    for(var t=0; t<steps.length; t++){
+    //passos.forEach(element => {
+      
+      //let distanciaEntreOsPonto = steps[t].distance.value / 1000;
+      var pontoInicialLat = steps[t].start_location.lat();
+      var pontoInicialLng = steps[t].start_location.lng();
+      var miniSteps = steps[t].lat_lngs;
 
+      for(var i=0; i<miniSteps.length; i++){
+        var miniStepsInicialLat;
+        var miniStepsInicialLng;
+        if(i==0){
+          // o x,y receberar do pai
+          //console.log("Inicio Recebendo do pai")
+          miniStepsInicialLat = pontoInicialLat
+          miniStepsInicialLng = pontoInicialLng
+        }else{
+          //console.log("REcebendo do anterior")
+          miniStepsInicialLat = miniSteps[i-1].lat();
+          miniStepsInicialLng = miniSteps[i-1].lng();
+        }
 
-    //console.log(res.routes[0].legs[0].steps)
-    //console.log(res.routes[0].legs[0].steps[0].start_location.lat(), res.routes[0].legs[0].steps[0].start_location.lng())
-    var passos = res.routes[0].legs[0].steps;
+        var miniStepsFinallLat = miniSteps[i].lat();
+        var miniStepsFinalLng = miniSteps[i].lng();
+        var distanciaEntreOsPontos = this.CalcRadiusDistance(miniStepsInicialLat, miniStepsInicialLng, miniStepsFinallLat, miniStepsFinalLng);
+       
+        total = total+distanciaEntreOsPontos;
 
-    passos.forEach(element => {
-      console.log("todos",element);
-      let distanciaEntreOsPonto = element.distance.value / 1000;
-      var pontoInicialLat = element.start_location.lat();
-      var pontoInicialLng = element.start_location.lng();
+        /*console.log(i,distanciaEntreOsPontos,(total));
+        console.log(miniStepsInicialLat,miniStepsInicialLng)
+        console.log(miniStepsFinallLat,miniStepsFinalLng)
+        console.log("//////////////////////////////////////////////");
+        */
+        //var ponto1={x:miniStepsInicialLng, y:miniStepsInicialLat}
+        //var ponto2 = {x: miniStepsFinalLng,y:miniStepsFinallLat}        
+        var direcaoPista = this.verificarDirecao(miniStepsInicialLat, miniStepsInicialLng, miniStepsFinallLat, miniStepsFinalLng);
 
+        this.ProcurarRadar(miniStepsInicialLat,miniStepsInicialLng,distanciaEntreOsPontos,direcaoPista,miniStepsFinallLat,miniStepsFinalLng);
+      }
 
-      element.lat_lngs.forEach(element2 => {
-        //console.log("todos[]Dentro",element2);
-
-        var pontoFinalLat = element2.lat();
-        var pontoFinalLng = element2.lng();
-        console.log("//////////////////////////////////////////////")
-        console.log("Inicial ", pontoInicialLat, ",", pontoInicialLng);
-        console.log("final ", pontoFinalLat, ",", pontoFinalLng);
-        this.CriarPontosApagar(pontoInicialLat, pontoInicialLng, this.map, distanciaEntreOsPonto);
-        this.CriarPontosApagar(pontoFinalLat, pontoFinalLng, this.map, distanciaEntreOsPonto);
-        console.log('----------------------------------------------')
-        console.log('----------------------------------------------')
-        //distanciaEntreOsPonto = this.CalcRadiusDistance(pontoInicialLat, pontoInicialLng, pontoFinalLat, pontoFinalLat)
-        console.log("distanciaEntreOsPonto", this.CalcRadiusDistance(pontoInicialLat, pontoInicialLng, pontoFinalLat, pontoFinalLng));
-
-
-        radaresPerto.forEach(element => {
-          if (this.CalcRadiusDistance(element.latitude, element.longitude, pontoFinalLat, pontoFinalLat) <= distanciaEntreOsPonto) {
-            radaresSelecionados.push(element);
-            console.log("COLOCOU UM RADAR")
-
-          }
-        });
-
-      });
-
-    });
-
+    }
+    
     radaresSelecionados.forEach(element => {
-      //this.criaMarcador(element, this.map);
-      //console.log(element); 
+      this.criaMarcador(element, this.map);
     });
+
   }
+
+  ProcurarRadar(pontoDeraioLat,pontoDeraioLng,distanciaEntreOsPonto,direcaoPista, finalLat, finalLng){
+    
+    
+    radaresPerto.forEach(element => {
+      var diststepsRadar:Number = this.CalcRadiusDistance(Number(element.latitude), Number(element.longitude), pontoDeraioLat, pontoDeraioLng);
+      //console.log("--->"+diststepsRadar, distanciaEntreOsPonto);
+      
+      //////-------------------------
+      var direcaoRadar = element.direcao;
+      
+      /////------------------------------
+      if ( diststepsRadar <= distanciaEntreOsPonto ) {
+        if((Math.abs(direcaoRadar-direcaoPista) >= 45)){
+          element.imagem = 'http://i.imgur.com/biRJBNL.png';
+        }
+        console.log(element.velocidade, direcaoRadar, direcaoPista/*+"   "+ pontoDeraioLat+","+pontoDeraioLng+"    "+finalLat+","+finalLng*/)
+        
+        radaresSelecionados.push(element);
+        //this.criaMarcador(element, this.map);
+        //console.log("COLOCOU UM RADAR")
+        
+
+      }
+    });
+
+  }
+
+  verificarDirecao(lat1, lon1, lat2, lon2){
+    
+      var y = Math.sin(lon2 - lon1) * Math.cos(lat2);
+      var x =
+        Math.cos(lat1) * Math.sin(lat2) -
+        Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1);
+    
+      var brng = Math.atan2(y, x) * 180/Math.PI;
+      return (360-brng) % 360;
+    
+  }
+
+
 
   CriarPontosApagar(latitude, longitude, mapa, distancia) {
     var posicao = new google.maps.LatLng(latitude, longitude);
