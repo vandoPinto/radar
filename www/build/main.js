@@ -115,11 +115,9 @@ var HomePage = (function () {
         var _this = this;
         var locationOptions = { timeout: 20000, enableHighAccuracy: true };
         marcadores = linhas;
-        // var marcador = marcadores[0];
         navigator.geolocation.getCurrentPosition(function (position) {
             var options = {
                 center: new google.maps.LatLng(position.coords.latitude, position.coords.longitude),
-                //center: new google.maps.LatLng(-15.797792, -47.887632),
                 zoom: 20,
                 mapTypeId: google.maps.MapTypeId.ROADMAP
             };
@@ -131,10 +129,7 @@ var HomePage = (function () {
             var distanciaTotal = _this.CalcRadiusDistance(selecionado.latitude, selecionado.longitude, position.coords.latitude, position.coords.longitude);
             marcadores.forEach(function (element) {
                 if (_this.CalcRadiusDistance(element.latitude, element.longitude, position.coords.latitude, position.coords.longitude) <= distanciaTotal && element.velocidade > 0) {
-                    //console.log(element.velocidade);
-                    //selecionado = element;
                     radaresPerto.push(element);
-                    //this.criaMarcador(element, this.map);
                 }
             });
         }, function (error) {
@@ -143,9 +138,7 @@ var HomePage = (function () {
     };
     HomePage.prototype.CalcRadiusDistance = function (lat1, lon1, lat2, lon2) {
         var RADIUSMILES = 3961, RADIUSKILOMETERS = 6373000, latR1 = this.deg2rad(lat1), lonR1 = this.deg2rad(lon1), latR2 = this.deg2rad(lat2), lonR2 = this.deg2rad(lon2), latDifference = latR2 - latR1, lonDifference = lonR2 - lonR1, a = Math.pow(Math.sin(latDifference / 2), 2) + Math.cos(latR1) * Math.cos(latR2) * Math.pow(Math.sin(lonDifference / 2), 2), c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)), dm = c * RADIUSMILES, dk = c * RADIUSKILOMETERS;
-        //var mi = this.round(dm);
         var km = this.round(dk);
-        //console.log(km);
         return (km);
     };
     HomePage.prototype.deg2rad = function (deg) {
@@ -169,17 +162,13 @@ var HomePage = (function () {
         };
         var novoMarcador = new google.maps.Marker(opcoes);
         marcadores.push(novoMarcador);
-        //this.map.setCenter(novoMarcador.position)
     };
     HomePage.prototype.verificarRadares = function (res) {
         var _this = this;
         console.log(radaresPerto.length);
         var steps = res.routes[0].legs[0].steps;
         console.log("todos", res.routes[0].legs[0]);
-        var total = 1;
         for (var t = 0; t < steps.length; t++) {
-            //passos.forEach(element => {
-            //let distanciaEntreOsPonto = steps[t].distance.value / 1000;
             var pontoInicialLat = steps[t].start_location.lat();
             var pontoInicialLng = steps[t].start_location.lng();
             var miniSteps = steps[t].lat_lngs;
@@ -187,27 +176,16 @@ var HomePage = (function () {
                 var miniStepsInicialLat;
                 var miniStepsInicialLng;
                 if (i == 0) {
-                    // o x,y receberar do pai
-                    //console.log("Inicio Recebendo do pai")
                     miniStepsInicialLat = pontoInicialLat;
                     miniStepsInicialLng = pontoInicialLng;
                 }
                 else {
-                    //console.log("REcebendo do anterior")
                     miniStepsInicialLat = miniSteps[i - 1].lat();
                     miniStepsInicialLng = miniSteps[i - 1].lng();
                 }
                 var miniStepsFinallLat = miniSteps[i].lat();
                 var miniStepsFinalLng = miniSteps[i].lng();
                 var distanciaEntreOsPontos = this.CalcRadiusDistance(miniStepsInicialLat, miniStepsInicialLng, miniStepsFinallLat, miniStepsFinalLng);
-                total = total + distanciaEntreOsPontos;
-                /*console.log(i,distanciaEntreOsPontos,(total));
-                console.log(miniStepsInicialLat,miniStepsInicialLng)
-                console.log(miniStepsFinallLat,miniStepsFinalLng)
-                console.log("//////////////////////////////////////////////");
-                */
-                //var ponto1={x:miniStepsInicialLng, y:miniStepsInicialLat}
-                //var ponto2 = {x: miniStepsFinalLng,y:miniStepsFinallLat}        
                 var direcaoPista = this.verificarDirecao(miniStepsInicialLat, miniStepsInicialLng, miniStepsFinallLat, miniStepsFinalLng);
                 this.ProcurarRadar(miniStepsInicialLat, miniStepsInicialLng, distanciaEntreOsPontos, direcaoPista, miniStepsFinallLat, miniStepsFinalLng);
             }
@@ -220,18 +198,13 @@ var HomePage = (function () {
         var _this = this;
         radaresPerto.forEach(function (element) {
             var diststepsRadar = _this.CalcRadiusDistance(Number(element.latitude), Number(element.longitude), pontoDeraioLat, pontoDeraioLng);
-            //console.log("--->"+diststepsRadar, distanciaEntreOsPonto);
-            //////-------------------------
             var direcaoRadar = element.direcao;
-            /////------------------------------
             if (diststepsRadar <= distanciaEntreOsPonto) {
                 if ((Math.abs(direcaoRadar - direcaoPista) >= 45)) {
                     element.imagem = 'http://i.imgur.com/biRJBNL.png';
                 }
                 console.log(element.velocidade, direcaoRadar, direcaoPista /*+"   "+ pontoDeraioLat+","+pontoDeraioLng+"    "+finalLat+","+finalLng*/);
                 radaresSelecionados.push(element);
-                //this.criaMarcador(element, this.map);
-                //console.log("COLOCOU UM RADAR")
             }
         });
     };

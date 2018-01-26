@@ -14,7 +14,6 @@ export class HomePage {
   @ViewChild('directionsPanel') directionsPanel: ElementRef;
   map: any;
 
-
   constructor() {
 
   }
@@ -28,7 +27,6 @@ export class HomePage {
     fetch('./assets/coordenadas/maparadar.txt')
       .then(response => response.text())
       .then((text) => {
-
         var imagens = {
           muitoBom: 'http://i.imgur.com/bFnWq8k.png'
           , bom: 'http://i.imgur.com/VnlbIoL.png'
@@ -49,27 +47,18 @@ export class HomePage {
             , direcao: linha[5]
             , imagem: imagens.medio
           }
-
-
           linhas.push(marcador);
-
-
         });
         this.initializeMap(linhas);
       });
-
   }
 
   startNavigating(origem, destino) {
-
     let directionsService = new google.maps.DirectionsService;
     let directionsDisplay = new google.maps.DirectionsRenderer;
-
     directionsDisplay.setMap(this.map);
     directionsDisplay.setPanel(this.directionsPanel.nativeElement);
-
     directionsService.route({
-
       //-15.911610, -48.069302
       origin: { lat: origem.latitude, lng: origem.longitude },
       //destination: {lat: Number(destino.latitude), lng: Number(destino.longitude)},
@@ -77,33 +66,25 @@ export class HomePage {
 
       travelMode: google.maps.TravelMode['DRIVING']
     }, (res, status) => {
-
       if (status == google.maps.DirectionsStatus.OK) {
         directionsDisplay.setDirections(res);
         console.log("foram encontrados radares perto: ", radaresPerto.length);
         this.verificarRadares(res);
-
       } else {
         console.warn(status);
       }
-
     });
-
   }
 
   initializeMap(linhas) {
-
     let locationOptions = { timeout: 20000, enableHighAccuracy: true };
     marcadores = linhas;
-    // var marcador = marcadores[0];
-
     navigator.geolocation.getCurrentPosition(
 
       (position) => {
 
         let options = {
           center: new google.maps.LatLng(position.coords.latitude, position.coords.longitude),
-          //center: new google.maps.LatLng(-15.797792, -47.887632),
           zoom: 20,
           mapTypeId: google.maps.MapTypeId.ROADMAP
         }
@@ -120,10 +101,7 @@ export class HomePage {
 
         marcadores.forEach(element => {
           if (this.CalcRadiusDistance(element.latitude, element.longitude, position.coords.latitude, position.coords.longitude) <= distanciaTotal && element.velocidade > 0) {
-            //console.log(element.velocidade);
-            //selecionado = element;
             radaresPerto.push(element);
-            //this.criaMarcador(element, this.map);
           }
         });
 
@@ -134,13 +112,6 @@ export class HomePage {
         console.log(error);
       }, locationOptions
     );
-
-
-
-
-
-
-
   }
 
   CalcRadiusDistance(lat1, lon1, lat2, lon2) {
@@ -156,9 +127,7 @@ export class HomePage {
       c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)),
       dm = c * RADIUSMILES,
       dk = c * RADIUSKILOMETERS;
-    //var mi = this.round(dm);
     var km = this.round(dk);
-    //console.log(km);
     return (km);
   }
 
@@ -185,7 +154,6 @@ export class HomePage {
     }
     var novoMarcador = new google.maps.Marker(opcoes);
     marcadores.push(novoMarcador);
-    //this.map.setCenter(novoMarcador.position)
   }
 
   verificarRadares(res) {
@@ -193,12 +161,8 @@ export class HomePage {
     console.log(radaresPerto.length)
     var steps = res.routes[0].legs[0].steps;
     console.log("todos",res.routes[0].legs[0]);
-    var total=1;
-
+    
     for(var t=0; t<steps.length; t++){
-    //passos.forEach(element => {
-      
-      //let distanciaEntreOsPonto = steps[t].distance.value / 1000;
       var pontoInicialLat = steps[t].start_location.lat();
       var pontoInicialLng = steps[t].start_location.lng();
       var miniSteps = steps[t].lat_lngs;
@@ -207,12 +171,9 @@ export class HomePage {
         var miniStepsInicialLat;
         var miniStepsInicialLng;
         if(i==0){
-          // o x,y receberar do pai
-          //console.log("Inicio Recebendo do pai")
           miniStepsInicialLat = pontoInicialLat
           miniStepsInicialLng = pontoInicialLng
         }else{
-          //console.log("REcebendo do anterior")
           miniStepsInicialLat = miniSteps[i-1].lat();
           miniStepsInicialLng = miniSteps[i-1].lng();
         }
@@ -220,23 +181,12 @@ export class HomePage {
         var miniStepsFinallLat = miniSteps[i].lat();
         var miniStepsFinalLng = miniSteps[i].lng();
         var distanciaEntreOsPontos = this.CalcRadiusDistance(miniStepsInicialLat, miniStepsInicialLng, miniStepsFinallLat, miniStepsFinalLng);
-       
-        total = total+distanciaEntreOsPontos;
-
-        /*console.log(i,distanciaEntreOsPontos,(total));
-        console.log(miniStepsInicialLat,miniStepsInicialLng)
-        console.log(miniStepsFinallLat,miniStepsFinalLng)
-        console.log("//////////////////////////////////////////////");
-        */
-        //var ponto1={x:miniStepsInicialLng, y:miniStepsInicialLat}
-        //var ponto2 = {x: miniStepsFinalLng,y:miniStepsFinallLat}        
         var direcaoPista = this.verificarDirecao(miniStepsInicialLat, miniStepsInicialLng, miniStepsFinallLat, miniStepsFinalLng);
 
         this.ProcurarRadar(miniStepsInicialLat,miniStepsInicialLng,distanciaEntreOsPontos,direcaoPista,miniStepsFinallLat,miniStepsFinalLng);
       }
 
-    }
-    
+    }    
     radaresSelecionados.forEach(element => {
       this.criaMarcador(element, this.map);
     });
@@ -244,30 +194,17 @@ export class HomePage {
   }
 
   ProcurarRadar(pontoDeraioLat,pontoDeraioLng,distanciaEntreOsPonto,direcaoPista, finalLat, finalLng){
-    
-    
     radaresPerto.forEach(element => {
       var diststepsRadar:Number = this.CalcRadiusDistance(Number(element.latitude), Number(element.longitude), pontoDeraioLat, pontoDeraioLng);
-      //console.log("--->"+diststepsRadar, distanciaEntreOsPonto);
-      
-      //////-------------------------
       var direcaoRadar = element.direcao;
-      
-      /////------------------------------
       if ( diststepsRadar <= distanciaEntreOsPonto ) {
         if((Math.abs(direcaoRadar-direcaoPista) >= 45)){
           element.imagem = 'http://i.imgur.com/biRJBNL.png';
         }
         console.log(element.velocidade, direcaoRadar, direcaoPista/*+"   "+ pontoDeraioLat+","+pontoDeraioLng+"    "+finalLat+","+finalLng*/)
-        
         radaresSelecionados.push(element);
-        //this.criaMarcador(element, this.map);
-        //console.log("COLOCOU UM RADAR")
-        
-
       }
     });
-
   }
 
   verificarDirecao(lat1, lon1, lat2, lon2){
@@ -281,8 +218,6 @@ export class HomePage {
       return (360-brng) % 360;
     
   }
-
-
 
   CriarPontosApagar(latitude, longitude, mapa, distancia) {
     var posicao = new google.maps.LatLng(latitude, longitude);
@@ -306,6 +241,3 @@ export class HomePage {
   }
 
 }
-
-
-
