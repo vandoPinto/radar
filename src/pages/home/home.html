@@ -1,17 +1,28 @@
 <ion-header>
   <ion-navbar>
     <ion-title>
-      Ionic Google Maps Example
+      Radar
     </ion-title>
   </ion-navbar>
 </ion-header>
 
 <ion-content>
+    <div id="floating-panel">
+        <button *ngIf="edited" (click)="addRadares()" id="botaoRadar">Radares</button>
+        <button *ngIf="edited2" (click)="removeRadares()" id="botaoRadar">Remover Radares</button>
+        <button *ngIf="edited3" (click)="calcularRota()" id="calcularRota">Calcular Rota</button>
+
+        <input id="address" type="textbox" value="Recanto das Emas" #ref>
+        <input (click)="procurarEndereco(ref.value)" id="submit" type="button" value="Procurar">
+      </div>
+
+
     <ion-card>
         <ion-card-content>
             <div #directionsPanel></div>
         </ion-card-content>
     </ion-card>
+    
 
   <div id="map_canvas"></div>
   

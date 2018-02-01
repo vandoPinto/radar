@@ -40,6 +40,7 @@ webpackEmptyAsyncContext.id = 151;
 "use strict";
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return HomePage; });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_core__ = __webpack_require__(0);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__ionic_native_file__ = __webpack_require__(195);
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -50,17 +51,57 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 
+
 var radaresPerto = [];
 var marcadores;
 var radaresSelecionados = [];
+var markers = [];
+var posicoesIniciais;
+var respostaGoogle;
+var jaAdicionados = false;
 var HomePage = (function () {
-    function HomePage() {
+    function HomePage(file) {
+        this.file = file;
+        this.edited = false;
+        this.edited2 = false;
+        this.edited3 = false;
+        this.removerDuplicados = function (a, s) {
+            console.log("antes array de radares", a.length);
+            var p, i, j;
+            if (s)
+                for (i = a.length; i > 1;) {
+                    if (a[--i] === a[i - 1]) {
+                        for (p = i - 1; p-- && a[i] === a[p];)
+                            ;
+                        i -= a.splice(p + 1, i - p - 1).length;
+                    }
+                }
+            else
+                for (i = a.length; i;) {
+                    for (p = --i; p > 0;)
+                        if (a[i] === a[--p]) {
+                            for (j = p; p-- && a[i] === a[p];)
+                                ;
+                            i -= a.splice(p + 1, j - p).length;
+                        }
+                }
+            console.log("Depois array de radares", a.length);
+            return a;
+        };
     }
     HomePage.prototype.ionViewDidLoad = function () {
+        var _this = this;
         this.InitDataMap();
+        //alert("carregando Arquivo")
+        this.file.checkDir(this.file.applicationDirectory, './assets/coordenadas/maparadar.txt')
+            .then(function (_) { return alert('Directory exists'); })
+            .catch(function (err) { return alert(String(_this.file[1])); });
+        //alert("fim do carregamento do arquivo")
     };
     HomePage.prototype.InitDataMap = function () {
-        var _this = this;
+        //alert("inicializando mapa")
+        this.initializeMap();
+        //this.readFile('./assets/coordenadas/maparadar.txt')
         fetch('./assets/coordenadas/maparadar.txt')
             .then(function (response) { return response.text(); })
             .then(function (text) {
@@ -85,59 +126,132 @@ var HomePage = (function () {
                 };
                 linhas.push(marcador);
             });
-            _this.initializeMap(linhas);
+            marcadores = linhas;
+            //this.initializeMap();
         });
     };
-    HomePage.prototype.startNavigating = function (origem, destino) {
-        var _this = this;
+    HomePage.prototype.startNavigating = function () {
+        console.log("startNavigation", posicoesIniciais);
         var directionsService = new google.maps.DirectionsService;
-        var directionsDisplay = new google.maps.DirectionsRenderer;
+        var directionsDisplay = new google.maps.DirectionsRenderer({
+            map: this.map,
+            draggable: true
+        });
         directionsDisplay.setMap(this.map);
         directionsDisplay.setPanel(this.directionsPanel.nativeElement);
         directionsService.route({
             //-15.911610, -48.069302
-            origin: { lat: origem.latitude, lng: origem.longitude },
-            //destination: {lat: Number(destino.latitude), lng: Number(destino.longitude)},
-            destination: { lat: Number(-15.911610), lng: Number(-48.069302) },
+            origin: { lat: posicoesIniciais.inicioLat, lng: posicoesIniciais.inicioLng },
+            destination: { lat: Number(posicoesIniciais.fimLat), lng: Number(posicoesIniciais.fimLng) },
+            //destination: { lat: Number(-15.911610), lng: Number(-48.069302) },
             travelMode: google.maps.TravelMode['DRIVING']
         }, function (res, status) {
             if (status == google.maps.DirectionsStatus.OK) {
                 directionsDisplay.setDirections(res);
-                console.log("foram encontrados radares perto: ", radaresPerto.length);
-                _this.verificarRadares(res);
+                respostaGoogle = res;
             }
             else {
                 console.warn(status);
             }
         });
+        //this.edited3 = true;
     };
-    HomePage.prototype.initializeMap = function (linhas) {
+    HomePage.prototype.calcularRota = function () {
+        this.edited = true;
+        this.edited3 = false;
+        //iniciarDepois que selecinar o destino
+        this.startNavigating();
+        //this.edited = true;
+    };
+    HomePage.prototype.addRadares = function () {
         var _this = this;
-        var locationOptions = { timeout: 20000, enableHighAccuracy: true };
-        marcadores = linhas;
-        navigator.geolocation.getCurrentPosition(function (position) {
-            var options = {
-                center: new google.maps.LatLng(position.coords.latitude, position.coords.longitude),
-                zoom: 20,
-                mapTypeId: google.maps.MapTypeId.ROADMAP
-            };
-            _this.map = new google.maps.Map(document.getElementById("map_canvas"), options);
-            var selecionado = { latitude: Number(-15.911610), longitude: Number(-48.069302) };
-            _this.startNavigating(position.coords, selecionado);
-            console.log("localização ", position.coords.latitude, position.coords.longitude);
-            console.log("ate onde ", selecionado.latitude, selecionado.longitude);
-            var distanciaTotal = _this.CalcRadiusDistance(selecionado.latitude, selecionado.longitude, position.coords.latitude, position.coords.longitude);
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+        this.edited = false;
+        this.edited2 = true;
+        if (!jaAdicionados) {
+            console.log("localização ", posicoesIniciais.inicioLat, posicoesIniciais.inicioLng);
+            console.log("ate onde ", posicoesIniciais.fimLat, posicoesIniciais.fimLng);
+            var distanciaTotal = this.CalcRadiusDistance(posicoesIniciais.inicioLat, posicoesIniciais.inicioLng, posicoesIniciais.fimLat, posicoesIniciais.fimLng);
+            console.log("olha", distanciaTotal);
             marcadores.forEach(function (element) {
-                if (_this.CalcRadiusDistance(element.latitude, element.longitude, position.coords.latitude, position.coords.longitude) <= distanciaTotal && element.velocidade > 0) {
+                if (_this.CalcRadiusDistance(element.latitude, element.longitude, posicoesIniciais.inicioLat, posicoesIniciais.inicioLng) <= distanciaTotal && element.velocidade > 0) {
                     radaresPerto.push(element);
                 }
             });
+            /////////////////////////////////////////////////////////////////////////////////////////////////////
+            this.verificarRadares();
+            this.removerDuplicados(radaresSelecionados, null);
+            radaresSelecionados.forEach(function (element) {
+                _this.criaMarcador(element, _this.map);
+            });
+            jaAdicionados = true;
+        }
+        else {
+            markers.forEach(function (element) {
+                element.setMap(_this.map);
+            });
+        }
+    };
+    HomePage.prototype.removeRadares = function () {
+        this.edited = true;
+        this.edited2 = false;
+        markers.forEach(function (element) {
+            element.setMap(null);
+        });
+    };
+    HomePage.prototype.initializeMap = function () {
+        var _this = this;
+        console.log("Iniciando mapa");
+        var locationOptions = { timeout: 20000, enableHighAccuracy: true };
+        //marcadores = linhas;
+        navigator.geolocation.getCurrentPosition(function (position) {
+            var options = {
+                center: new google.maps.LatLng(position.coords.latitude, position.coords.longitude),
+                zoom: 16,
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            };
+            _this.map = new google.maps.Map(document.getElementById("map_canvas"), options);
+            //-15.506533, -47.329646
+            //let selecionado = { latitude: Number(-15.903582), longitude: Number(-48.070680) };
+            posicoesIniciais = {
+                inicioLat: position.coords.latitude,
+                inicioLng: position.coords.longitude,
+                fimLat: "",
+                fimLng: ""
+            };
         }, function (error) {
             console.log(error);
         }, locationOptions);
+        //alert("inicializado");
+    };
+    HomePage.prototype.procurarEndereco = function (value) {
+        var geocoder = new google.maps.Geocoder();
+        this.geocodeAddress(geocoder, this.map, value);
+        this.edited3 = true;
+    };
+    HomePage.prototype.geocodeAddress = function (geocoder, resultsMap, value) {
+        var address = value;
+        geocoder.geocode({ 'address': address }, function (results, status) {
+            if (status === 'OK') {
+                resultsMap.setCenter(results[0].geometry.location);
+                /*var marker = new google.maps.Marker({
+                  map: resultsMap,
+                  position: results[0].geometry.location
+                });*/
+                posicoesIniciais.fimLat = results[0].geometry.location.lat();
+                posicoesIniciais.fimLng = results[0].geometry.location.lng();
+                console.log(posicoesIniciais.fimLat, posicoesIniciais.fimLng);
+            }
+            else {
+                alert('Geocode was not successful for the following reason: ' + status);
+            }
+        });
     };
     HomePage.prototype.CalcRadiusDistance = function (lat1, lon1, lat2, lon2) {
-        var RADIUSMILES = 3961, RADIUSKILOMETERS = 6373000, latR1 = this.deg2rad(lat1), lonR1 = this.deg2rad(lon1), latR2 = this.deg2rad(lat2), lonR2 = this.deg2rad(lon2), latDifference = latR2 - latR1, lonDifference = lonR2 - lonR1, a = Math.pow(Math.sin(latDifference / 2), 2) + Math.cos(latR1) * Math.cos(latR2) * Math.pow(Math.sin(lonDifference / 2), 2), c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)), dm = c * RADIUSMILES, dk = c * RADIUSKILOMETERS;
+        //RADIUSMILES = 3961,
+        var RADIUSKILOMETERS = 6373000, latR1 = this.deg2rad(lat1), lonR1 = this.deg2rad(lon1), latR2 = this.deg2rad(lat2), lonR2 = this.deg2rad(lon2), latDifference = latR2 - latR1, lonDifference = lonR2 - lonR1, a = Math.pow(Math.sin(latDifference / 2), 2) + Math.cos(latR1) * Math.cos(latR2) * Math.pow(Math.sin(lonDifference / 2), 2), c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)), 
+        //dm = c * RADIUSMILES,
+        dk = c * RADIUSKILOMETERS;
         var km = this.round(dk);
         return (km);
     };
@@ -161,10 +275,10 @@ var HomePage = (function () {
             map: mapa
         };
         var novoMarcador = new google.maps.Marker(opcoes);
-        marcadores.push(novoMarcador);
+        markers.push(novoMarcador);
     };
-    HomePage.prototype.verificarRadares = function (res) {
-        var _this = this;
+    HomePage.prototype.verificarRadares = function () {
+        var res = respostaGoogle;
         console.log(radaresPerto.length);
         var steps = res.routes[0].legs[0].steps;
         console.log("todos", res.routes[0].legs[0]);
@@ -190,9 +304,6 @@ var HomePage = (function () {
                 this.ProcurarRadar(miniStepsInicialLat, miniStepsInicialLng, distanciaEntreOsPontos, direcaoPista, miniStepsFinallLat, miniStepsFinalLng);
             }
         }
-        radaresSelecionados.forEach(function (element) {
-            _this.criaMarcador(element, _this.map);
-        });
     };
     HomePage.prototype.ProcurarRadar = function (pontoDeraioLat, pontoDeraioLng, distanciaEntreOsPonto, direcaoPista, finalLat, finalLng) {
         var _this = this;
@@ -203,8 +314,10 @@ var HomePage = (function () {
                 if ((Math.abs(direcaoRadar - direcaoPista) >= 45)) {
                     element.imagem = 'http://i.imgur.com/biRJBNL.png';
                 }
-                console.log(element.velocidade, direcaoRadar, direcaoPista /*+"   "+ pontoDeraioLat+","+pontoDeraioLng+"    "+finalLat+","+finalLng*/);
-                radaresSelecionados.push(element);
+                else {
+                    //console.log(element.velocidade, direcaoRadar, direcaoPista/*+"   "+ pontoDeraioLat+","+pontoDeraioLng+"    "+finalLat+","+finalLng*/)
+                    radaresSelecionados.push(element);
+                }
             }
         });
     };
@@ -215,51 +328,30 @@ var HomePage = (function () {
         var brng = Math.atan2(y, x) * 180 / Math.PI;
         return (360 - brng) % 360;
     };
-    HomePage.prototype.CriarPontosApagar = function (latitude, longitude, mapa, distancia) {
-        var posicao = new google.maps.LatLng(latitude, longitude);
-        var opcoes = {
-            position: posicao,
-            title: "Raio de distancia: " + distancia,
-            animation: google.maps.Animation.DROP,
-            icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                fillColor: 'red',
-                fillOpacity: .2,
-                strokeColor: 'white',
-                strokeWeight: .5,
-                scale: distancia
-            },
-            map: mapa
-        };
-        var novoMarcador = new google.maps.Marker(opcoes);
-        marcadores.push(novoMarcador);
-        //this.map.setCenter(novoMarcador.position)
-    };
     __decorate([
         Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["_8" /* ViewChild */])('directionsPanel'),
-        __metadata("design:type", typeof (_a = typeof __WEBPACK_IMPORTED_MODULE_0__angular_core__["t" /* ElementRef */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_0__angular_core__["t" /* ElementRef */]) === "function" && _a || Object)
+        __metadata("design:type", __WEBPACK_IMPORTED_MODULE_0__angular_core__["t" /* ElementRef */])
     ], HomePage.prototype, "directionsPanel", void 0);
     HomePage = __decorate([
         Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["m" /* Component */])({
-            selector: 'page-home',template:/*ion-inline-start:"C:\Users\vando.rodrigues\Desktop\IONIC\radar\src\pages\home\home.html"*/'<ion-header>\n  <ion-navbar>\n    <ion-title>\n      Ionic Google Maps Example\n    </ion-title>\n  </ion-navbar>\n</ion-header>\n\n<ion-content>\n    <ion-card>\n        <ion-card-content>\n            <div #directionsPanel></div>\n        </ion-card-content>\n    </ion-card>\n\n  <div id="map_canvas"></div>\n  \n</ion-content>\n'/*ion-inline-end:"C:\Users\vando.rodrigues\Desktop\IONIC\radar\src\pages\home\home.html"*/
+            selector: 'page-home',template:/*ion-inline-start:"C:\Users\vando.rodrigues\Desktop\IONIC\radar\src\pages\home\home.html"*/'<ion-header>\n  <ion-navbar>\n    <ion-title>\n      Radar\n    </ion-title>\n  </ion-navbar>\n</ion-header>\n\n<ion-content>\n    <div id="floating-panel">\n        <button *ngIf="edited" (click)="addRadares()" id="botaoRadar">Radares</button>\n        <button *ngIf="edited2" (click)="removeRadares()" id="botaoRadar">Remover Radares</button>\n        <button *ngIf="edited3" (click)="calcularRota()" id="calcularRota">Calcular Rota</button>\n\n        <input id="address" type="textbox" value="Recanto das Emas" #ref>\n        <input (click)="procurarEndereco(ref.value)" id="submit" type="button" value="Procurar">\n      </div>\n\n\n    <ion-card>\n        <ion-card-content>\n            <div #directionsPanel></div>\n        </ion-card-content>\n    </ion-card>\n    \n\n  <div id="map_canvas"></div>\n  \n</ion-content>\n'/*ion-inline-end:"C:\Users\vando.rodrigues\Desktop\IONIC\radar\src\pages\home\home.html"*/
         }),
-        __metadata("design:paramtypes", [])
+        __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_1__ionic_native_file__["a" /* File */]])
     ], HomePage);
     return HomePage;
-    var _a;
 }());
 
 //# sourceMappingURL=home.js.map
 
 /***/ }),
 
-/***/ 195:
+/***/ 196:
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_platform_browser_dynamic__ = __webpack_require__(196);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__app_module__ = __webpack_require__(219);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_platform_browser_dynamic__ = __webpack_require__(197);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__app_module__ = __webpack_require__(220);
 
 
 Object(__WEBPACK_IMPORTED_MODULE_0__angular_platform_browser_dynamic__["a" /* platformBrowserDynamic */])().bootstrapModule(__WEBPACK_IMPORTED_MODULE_1__app_module__["a" /* AppModule */]);
@@ -267,7 +359,7 @@ Object(__WEBPACK_IMPORTED_MODULE_0__angular_platform_browser_dynamic__["a" /* pl
 
 /***/ }),
 
-/***/ 219:
+/***/ 220:
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -277,15 +369,17 @@ Object(__WEBPACK_IMPORTED_MODULE_0__angular_platform_browser_dynamic__["a" /* pl
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_ionic_angular__ = __webpack_require__(110);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__ionic_native_splash_screen__ = __webpack_require__(191);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__ionic_native_status_bar__ = __webpack_require__(193);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__ionic_native_geolocation__ = __webpack_require__(270);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__app_component__ = __webpack_require__(271);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__ionic_native_geolocation__ = __webpack_require__(271);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__app_component__ = __webpack_require__(272);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__pages_home_home__ = __webpack_require__(194);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__ionic_native_file__ = __webpack_require__(195);
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+
 
 
 
@@ -315,6 +409,7 @@ var AppModule = (function () {
                 __WEBPACK_IMPORTED_MODULE_7__pages_home_home__["a" /* HomePage */]
             ],
             providers: [
+                __WEBPACK_IMPORTED_MODULE_8__ionic_native_file__["a" /* File */],
                 __WEBPACK_IMPORTED_MODULE_4__ionic_native_status_bar__["a" /* StatusBar */],
                 __WEBPACK_IMPORTED_MODULE_3__ionic_native_splash_screen__["a" /* SplashScreen */],
                 __WEBPACK_IMPORTED_MODULE_5__ionic_native_geolocation__["a" /* Geolocation */],
@@ -329,7 +424,7 @@ var AppModule = (function () {
 
 /***/ }),
 
-/***/ 271:
+/***/ 272:
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -375,5 +470,5 @@ var MyApp = (function () {
 
 /***/ })
 
-},[195]);
+},[196]);
 //# sourceMappingURL=main.js.map

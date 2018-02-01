@@ -7,6 +7,7 @@ import { Geolocation } from '@ionic-native/geolocation';
 
 import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
+import { File } from '@ionic-native/file';
 
 @NgModule({
   declarations: [
@@ -23,6 +24,7 @@ import { HomePage } from '../pages/home/home';
     HomePage
   ],
   providers: [
+    File,
     StatusBar,
     SplashScreen,
     Geolocation,
