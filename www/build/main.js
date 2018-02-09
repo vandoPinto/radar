@@ -1,6 +1,6 @@
 webpackJsonp([0],{
 
-/***/ 109:
+/***/ 110:
 /***/ (function(module, exports) {
 
 function webpackEmptyAsyncContext(req) {
@@ -13,7 +13,7 @@ function webpackEmptyAsyncContext(req) {
 webpackEmptyAsyncContext.keys = function() { return []; };
 webpackEmptyAsyncContext.resolve = webpackEmptyAsyncContext;
 module.exports = webpackEmptyAsyncContext;
-webpackEmptyAsyncContext.id = 109;
+webpackEmptyAsyncContext.id = 110;
 
 /***/ }),
 
@@ -41,6 +41,7 @@ webpackEmptyAsyncContext.id = 151;
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return HomePage; });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_core__ = __webpack_require__(0);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__ionic_native_file__ = __webpack_require__(195);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_ionic_angular__ = __webpack_require__(55);
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -52,6 +53,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 
 
+
 var radaresPerto = [];
 var marcadores;
 var radaresSelecionados = [];
@@ -60,8 +62,9 @@ var posicoesIniciais;
 var respostaGoogle;
 var jaAdicionados = false;
 var HomePage = (function () {
-    function HomePage(file) {
+    function HomePage(file, platform) {
         this.file = file;
+        this.platform = platform;
         this.edited = false;
         this.edited2 = false;
         this.edited3 = false;
@@ -90,20 +93,13 @@ var HomePage = (function () {
         };
     }
     HomePage.prototype.ionViewDidLoad = function () {
-        var _this = this;
-        this.InitDataMap();
-        //alert("carregando Arquivo")
-        this.file.checkDir(this.file.applicationDirectory, './assets/coordenadas/maparadar.txt')
-            .then(function (_) { return alert('Directory exists'); })
-            .catch(function (err) { return alert(String(_this.file[1])); });
-        //alert("fim do carregamento do arquivo")
-    };
-    HomePage.prototype.InitDataMap = function () {
-        //alert("inicializando mapa")
         this.initializeMap();
-        //this.readFile('./assets/coordenadas/maparadar.txt')
-        fetch('./assets/coordenadas/maparadar.txt')
-            .then(function (response) { return response.text(); })
+        //    this.carregarLocalizacaoRadares(); 
+    };
+    HomePage.prototype.carregarLocalizacaoRadares = function () {
+        var path = "" + this.file.applicationDirectory + "www/assets/coordenadas/";
+        //this.file.checkFile(path,'maparadar.txt').then( ()=> {alert("achou")}).catch(()=>{alert("nao achou o arquivo")})
+        this.file.readAsText(path, 'maparadar.txt')
             .then(function (text) {
             var imagens = {
                 muitoBom: 'http://i.imgur.com/bFnWq8k.png',
@@ -127,8 +123,8 @@ var HomePage = (function () {
                 linhas.push(marcador);
             });
             marcadores = linhas;
-            //this.initializeMap();
-        });
+        })
+            .catch(function (err) { return alert("Erro ao carregar as localizações dos radares, por favor reinicie o aplicativo"); });
     };
     HomePage.prototype.startNavigating = function () {
         console.log("startNavigation", posicoesIniciais);
@@ -222,7 +218,7 @@ var HomePage = (function () {
         }, function (error) {
             console.log(error);
         }, locationOptions);
-        //alert("inicializado");
+        this.carregarLocalizacaoRadares();
     };
     HomePage.prototype.procurarEndereco = function (value) {
         var geocoder = new google.maps.Geocoder();
@@ -336,7 +332,7 @@ var HomePage = (function () {
         Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["m" /* Component */])({
             selector: 'page-home',template:/*ion-inline-start:"C:\Users\vando.rodrigues\Desktop\IONIC\radar\src\pages\home\home.html"*/'<ion-header>\n  <ion-navbar>\n    <ion-title>\n      Radar\n    </ion-title>\n  </ion-navbar>\n</ion-header>\n\n<ion-content>\n    <div id="floating-panel">\n        <button *ngIf="edited" (click)="addRadares()" id="botaoRadar">Radares</button>\n        <button *ngIf="edited2" (click)="removeRadares()" id="botaoRadar">Remover Radares</button>\n        <button *ngIf="edited3" (click)="calcularRota()" id="calcularRota">Calcular Rota</button>\n\n        <input id="address" type="textbox" value="Recanto das Emas" #ref>\n        <input (click)="procurarEndereco(ref.value)" id="submit" type="button" value="Procurar">\n      </div>\n\n\n    <ion-card>\n        <ion-card-content>\n            <div #directionsPanel></div>\n        </ion-card-content>\n    </ion-card>\n    \n\n  <div id="map_canvas"></div>\n  \n</ion-content>\n'/*ion-inline-end:"C:\Users\vando.rodrigues\Desktop\IONIC\radar\src\pages\home\home.html"*/
         }),
-        __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_1__ionic_native_file__["a" /* File */]])
+        __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_1__ionic_native_file__["a" /* File */], __WEBPACK_IMPORTED_MODULE_2_ionic_angular__["d" /* Platform */]])
     ], HomePage);
     return HomePage;
 }());
@@ -366,7 +362,7 @@ Object(__WEBPACK_IMPORTED_MODULE_0__angular_platform_browser_dynamic__["a" /* pl
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return AppModule; });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_platform_browser__ = __webpack_require__(29);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__angular_core__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_ionic_angular__ = __webpack_require__(110);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_ionic_angular__ = __webpack_require__(55);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__ionic_native_splash_screen__ = __webpack_require__(191);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__ionic_native_status_bar__ = __webpack_require__(193);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__ionic_native_geolocation__ = __webpack_require__(271);
@@ -430,7 +426,7 @@ var AppModule = (function () {
 "use strict";
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return MyApp; });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_core__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_ionic_angular__ = __webpack_require__(110);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_ionic_angular__ = __webpack_require__(55);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__ionic_native_status_bar__ = __webpack_require__(193);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__ionic_native_splash_screen__ = __webpack_require__(191);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__pages_home_home__ = __webpack_require__(194);

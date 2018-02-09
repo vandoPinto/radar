@@ -1,5 +1,6 @@
 import { Component, ViewChild, ElementRef } from '@angular/core';
 import { File } from '@ionic-native/file';
+import { Platform } from 'ionic-angular';
 
 declare var google;
 var radaresPerto = [];
@@ -20,57 +21,54 @@ export class HomePage {
   @ViewChild('directionsPanel') directionsPanel: ElementRef;
   map: any;
 
-  constructor(private file: File) {
+  constructor(private file: File, public platform: Platform) {
 
   }
 
   ionViewDidLoad() {
 
-    this.InitDataMap();
-    //alert("carregando Arquivo")
-    this.file.checkDir(this.file.applicationDirectory, './assets/coordenadas/maparadar.txt')
-      .then(_ => alert('Directory exists'))
-      .catch(err => alert(String(this.file[1])  ))
-      //alert("fim do carregamento do arquivo")
+    this.initializeMap();
+//    this.carregarLocalizacaoRadares(); 
+  }
+
+  carregarLocalizacaoRadares(){
+    var path = ""+this.file.applicationDirectory+"www/assets/coordenadas/";
+    //this.file.checkFile(path,'maparadar.txt').then( ()=> {alert("achou")}).catch(()=>{alert("nao achou o arquivo")})
+    
+    this.file.readAsText(path,'maparadar.txt')
+    .then((text) => {
+      var imagens = {
+        muitoBom: 'http://i.imgur.com/bFnWq8k.png'
+        , bom: 'http://i.imgur.com/VnlbIoL.png'
+        , medio: 'http://i.imgur.com/eNAvIvr.png'
+        , ruim: 'http://i.imgur.com/uCRXqdV.png'
+        , pessimo: 'http://i.imgur.com/biRJBNL.png'
+      }
+
+      var linhas = [];
+      (text.split("\n")).slice(1, -1).forEach(element => {
+        var linha = element.split(",");
+        //X,Y,TYPE,SPEED,DirType,Direction
+        let marcador = {
+          latitude: linha[1]
+          , longitude: linha[0]
+          , titulo: 'Radar'
+          , velocidade: linha[3]
+          , direcao: linha[5]
+          , imagem: imagens.medio
+        }
+        linhas.push(marcador);
+      });
+      marcadores = linhas;
+    })
+    .catch(err => alert("Erro ao carregar as localizações dos radares, por favor reinicie o aplicativo"))
   }
 
   public edited = false;
   public edited2 = false;
   public edited3 = false;
 
-  InitDataMap() {
-    //alert("inicializando mapa")
-    this.initializeMap();
-    //this.readFile('./assets/coordenadas/maparadar.txt')
-    fetch('./assets/coordenadas/maparadar.txt')
-      .then(response => response.text())
-      .then((text) => {
-        var imagens = {
-          muitoBom: 'http://i.imgur.com/bFnWq8k.png'
-          , bom: 'http://i.imgur.com/VnlbIoL.png'
-          , medio: 'http://i.imgur.com/eNAvIvr.png'
-          , ruim: 'http://i.imgur.com/uCRXqdV.png'
-          , pessimo: 'http://i.imgur.com/biRJBNL.png'
-        }
-
-        var linhas = [];
-        (text.split("\n")).slice(1, -1).forEach(element => {
-          var linha = element.split(",");
-          //X,Y,TYPE,SPEED,DirType,Direction
-          let marcador = {
-            latitude: linha[1]
-            , longitude: linha[0]
-            , titulo: 'Radar'
-            , velocidade: linha[3]
-            , direcao: linha[5]
-            , imagem: imagens.medio
-          }
-          linhas.push(marcador);
-        });
-        marcadores = linhas;
-        //this.initializeMap();
-      });
-  }
+  
 
   startNavigating() {
 
@@ -179,23 +177,19 @@ export class HomePage {
           , fimLat: ""
           , fimLng: ""
         }
-
-
       },
-
       (error) => {
         console.log(error);
       }, locationOptions
     );
 
-    //alert("inicializado");
+    this.carregarLocalizacaoRadares();
   }
 
   procurarEndereco(value) {
     var geocoder = new google.maps.Geocoder();
     this.geocodeAddress(geocoder, this.map, value);
     this.edited3 = true;
-
   }
 
   geocodeAddress(geocoder, resultsMap, value) {
