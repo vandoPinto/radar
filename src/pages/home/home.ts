@@ -177,13 +177,14 @@ export class HomePage {
           , fimLat: ""
           , fimLng: ""
         }
+        this.carregarLocalizacaoRadares();
       },
       (error) => {
         console.log(error);
       }, locationOptions
     );
 
-    this.carregarLocalizacaoRadares();
+    
   }
 
   procurarEndereco(value) {
